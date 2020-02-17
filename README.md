@@ -1,2 +1,2 @@
 # step4
-L4 for Gemini Lake. This repo may be purged later for inactivity.
+Bleeding edge style variation of L4. This repo may be purged later for inactivity.
