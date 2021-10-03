@@ -1,0 +1,4 @@
+# Change this for your target triple...
+
+[build]
+target = "armv7a-none-eabi"
