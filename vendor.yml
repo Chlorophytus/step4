@@ -1,0 +1,6 @@
+# The vendor-defined configuration area.
+# This allows for a build-time configuration.
+target:
+  t0: "armv7"
+  t1: "cortex-a9"
+  t2: "zynq7"

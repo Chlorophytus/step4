@@ -1,25 +1,23 @@
-pub type Type = u32;
-
 pub enum RegularType {
-    ExchangeRegisters(Type),
-    SystemClock(Type),
-    ThreadSwitch(Type),
-    Schedule(Type),
-    Ipc(Type),
-    Lipc(Type),
-    Unmap(Type),
+    ExchangeRegisters(u32),
+    SystemClock(u32),
+    ThreadSwitch(u32),
+    Schedule(u32),
+    Ipc(u32),
+    Lipc(u32),
+    Unmap(u32),
 }
 
 pub enum SlowType {
-    KernelInterface(Type),
+    KernelInterface(u32),
 }
 
 
 pub enum PrivilegedType {
-    ThreadControl(Type),
-    SpaceControl(Type),
-    ProcessorControl(Type),
-    MemoryControl(Type),
+    ThreadControl(u32),
+    SpaceControl(u32),
+    ProcessorControl(u32),
+    MemoryControl(u32),
 }
 
 trait SyscallTrait {
