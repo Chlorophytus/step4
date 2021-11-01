@@ -37,7 +37,7 @@ fn main() {
     let config =
         Config::deserialize(de).expect("\n\n*** Your 'vendor.yml' file is malformed. ***\n\n");
 
-    // call it a day, SEE: rustlang RFC2259
+    // call it a day, see: https://github.com/rust-lang/rfcs/issues/2259
     // also errors should NEVER happen here, it'd be a bitflip or some skid
     // writing to vendor.yml while we use it.
     config_struct::create_struct("vendor.yml", "src/vendor.rs", &StructOptions::default()).unwrap();
