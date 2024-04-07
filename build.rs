@@ -1,50 +1,80 @@
-use config_struct;
-use config_struct::StructOptions;
+use chrono::Datelike;
+use core::panic;
 use serde;
 use serde::Deserialize;
-use serde_yaml;
-use serde_yaml::{Deserializer, Value};
 use std::fs::File;
+use std::io::Read;
+use toml::Deserializer;
 
 // =============================================================================
-// You configure your Step4 with a 'vendor.yml' file.
+// You configure your Step4 with a 'vendor.toml' file.
 // =============================================================================
 #[derive(Deserialize)]
-/// The target we are building to.
-struct ConfigTarget {
-    /// Determines what 'stand' we use. All around determines what asm is used.
-    t0: String,
+/// Bootup data
+struct ConfigBoot {
+    /// Microkernel linker script
+    linker_script: String,
+}
 
-    /// Determines peripherals.
-    t1: String,
-
-    /// Determines more peripherals. We could use a passed DTB too.
-    t2: String,
+#[derive(Deserialize)]
+/// The serial debug output's options
+struct ConfigUART {
+    /// The UART type
+    hw_type: String,
 }
 
 #[derive(Deserialize)]
 /// Main config to pull in.
 struct Config {
-    /// See: `ConfigTarget`.
-    target: ConfigTarget,
+    /// See: `ConfigBoot`
+    boot: ConfigBoot,
+    /// See: `ConfigUART`.
+    uart: ConfigUART,
 }
 
 fn main() {
-    let file = File::open("vendor.yml").expect(
-        "\n\n*** You need to make a 'vendor.yml' file. Please make one to build Step4. ***\n\n",
+    let mut vendor_toml = String::new();
+
+    File::open("vendor.toml").expect(
+        "\n\n*** You need to make a 'vendor.toml' file. Please make one to build Step4. ***\n\n",
+    ).read_to_string(&mut vendor_toml).unwrap();
+
+    // Deserializers are mutating
+    let de = toml::Deserializer::new(&vendor_toml);
+    let config: Config =
+        Config::deserialize(de).expect("\n\n*** Your 'vendor.toml' file is malformed. ***\n\n");
+
+    let build_date = chrono::offset::Utc::now();
+    let build_time: u32 = ((build_date.day() & 0b11111) << 0)
+        | ((build_date.month() & 0b1111) << 5)
+        | (((build_date.year() as u32 - 2000) & 0b1111111) << 9);
+    println!("cargo::rustc-env=S4BUILDTIME={}", build_time);
+
+    let version = env!("CARGO_PKG_VERSION")
+        .split(".")
+        .map(|v| str::parse::<u32>(v).unwrap())
+        .collect::<Vec<u32>>();
+    println!(
+        "cargo::rustc-env=S4BUILDVERSION={}",
+        ((version[0] & 0xFF) << 24) | ((version[1] & 0xFF) << 16) | ((version[2] & 0xFF) << 2)
     );
-    let de = serde_yaml::Deserializer::from_reader(file);
-    let config =
-        Config::deserialize(de).expect("\n\n*** Your 'vendor.yml' file is malformed. ***\n\n");
 
-    // call it a day, see: https://github.com/rust-lang/rfcs/issues/2259
-    // also errors should NEVER happen here, it'd be a bitflip or some skid
-    // writing to vendor.yml while we use it.
-    config_struct::create_struct("vendor.yml", "src/vendor.rs", &StructOptions::default()).unwrap();
-
-    let t0: &str = &conrfig.target.t0;
-    match t0 {
-        "armv7" => {}
-        _ => {panic!("Target `{}` is unsupported at the moment.", t0)}
+    println!("cargo::rustc-link-lib=s4support");
+    println!("cargo::rustc-cfg=s4uart=\"{}\"", config.uart.hw_type);
+    let mut build = cc::Build::new();
+    match std::env::var("TARGET").unwrap().as_str() {
+        "armv7a-none-eabi" => {
+            println!("cargo::rustc-cfg=s4arch=\"armv7a\"");
+            build.file("src/support/armv7a.S").compile("s4support");
+            println!("cargo::rerun-if-changed={}", "src/support/armv7a.S");
+        }
+        unsupported => {
+            panic!("Target `{}` is unsupported at the moment.", unsupported);
+        }
     };
+    println!("cargo::rerun-if-changed={}", config.boot.linker_script);
+    println!(
+        "cargo::rustc-link-arg=--script={}",
+        config.boot.linker_script
+    );
 }

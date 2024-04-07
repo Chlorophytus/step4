@@ -1,0 +1,6 @@
+[boot]
+linker_script = "src/ldscripts/example_armv7a.ld"
+
+[uart]
+hw_type = "zynq"
+base_address = 0xE0000000
