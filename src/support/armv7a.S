@@ -1,5 +1,6 @@
-.globl _setup_a9
-_setup_a9:
+.globl _armv7a_setup
+
+_armv7a_setup:
     // The Cortex-A9 should be in Supervisor mode in order to proceed
     // SEE: Arm DDI0388G page identifier 3-6
     // Move the Program Status Register to R0

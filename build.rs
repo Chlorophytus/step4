@@ -14,13 +14,16 @@ use toml::Deserializer;
 struct ConfigBoot {
     /// Microkernel linker script
     linker_script: String,
+
+    /// Hardware subtype
+    hw_type: String,
 }
 
 #[derive(Deserialize)]
 /// The serial debug output's options
 struct ConfigUART {
-    /// The UART type
-    hw_type: String,
+    /// The base address of the UART
+    base_address: u64,
 }
 
 #[derive(Deserialize)]
@@ -60,12 +63,19 @@ fn main() {
     );
 
     println!("cargo::rustc-link-lib=s4support");
-    println!("cargo::rustc-cfg=s4uart=\"{}\"", config.uart.hw_type);
+    println!("cargo::rustc-cfg=s4hwtype=\"{}\"", config.boot.hw_type);
+    println!(
+        "cargo::rustc-env=S4UARTADDRESS={}",
+        config.uart.base_address
+    );
     let mut build = cc::Build::new();
     match std::env::var("TARGET").unwrap().as_str() {
         "armv7a-none-eabi" => {
             println!("cargo::rustc-cfg=s4arch=\"armv7a\"");
-            build.file("src/support/armv7a.S").compile("s4support");
+            build
+            .file("src/support/device_tree.S")
+                .file("src/support/armv7a.S")
+                .compile("s4support");
             println!("cargo::rerun-if-changed={}", "src/support/armv7a.S");
         }
         unsupported => {

@@ -1,15 +1,16 @@
 #![no_main]
 #![no_std]
 
-use core::{arch::global_asm, panic::PanicInfo, fmt::Write};
+use core::{arch::global_asm, fmt::Write, panic::PanicInfo};
 use heapless::String;
 use step4::kernel::{Description, Kernel};
 mod step4;
 
 use crate::step4::{debug, kernel};
 
+#[cfg(s4arch = "armv7a")]
 extern "C" {
-    fn _setup_a9() -> u32;
+    fn _armv7a_setup() -> u32;
 }
 
 #[cfg(s4arch = "armv7a")]
@@ -27,12 +28,22 @@ global_asm!(
     "
 );
 
+#[cfg(s4arch = "armv7a")]
+unsafe fn _setup() -> bool {
+    _armv7a_setup() == 0x13
+}
+
 #[panic_handler]
 fn panic(_panic: &PanicInfo<'_>) -> ! {
     debug::put_str("*** START PANIC ***\r\n");
     if let Some(location) = _panic.location() {
         let mut info = String::<1024>::new();
-        if let Ok(()) = write!(info, "Source information: '{}' (line {})\r\n", location.file(), location.line()) {
+        if let Ok(()) = write!(
+            info,
+            "Source information: '{}' (line {})\r\n",
+            location.file(),
+            location.line()
+        ) {
             debug::put_str(info.as_str());
         } else {
             debug::put_str("No source information available.");
@@ -47,8 +58,7 @@ pub extern "C" fn _start() -> ! {
     debug::setup();
     debug::put_str("Step4 microkernel\r\n");
 
-    let is_setup = unsafe { _setup_a9() } == 0x13;
-    if is_setup {
+    if unsafe { _setup() } {
         debug::put_str("... Setup okay\r\n");
     } else {
         debug::put_str("... Setup fail, panicing\r\n");
