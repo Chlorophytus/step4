@@ -11,26 +11,83 @@ use crate::step4::{debug, kernel};
 #[cfg(s4arch = "armv7a")]
 extern "C" {
     fn _armv7a_setup() -> u32;
+    fn _armv7a_check_timer_a9() -> u32;
 }
 
 #[cfg(s4arch = "armv7a")]
 global_asm!(
     "
     .section .vector_table, \"ax\", %progbits
-    b _start // TODO: Reset
-    b _start // TODO: UndefinedInstruction
-    b _start // TODO: SupervisorCall
-    b _start // TODO: PrefetchAbort
-    b _start // TODO: DataAbort
-    b _start // TODO: HypervisorTrap
-    b _start // TODO: IRQInterrupt
-    b _start // TODO: FIQInterrupt
+    b _start             // TODO: Reset
+    b _interrupt_und     // TODO: UndefinedInstruction
+    b _interrupt_sup     // TODO: SupervisorCall
+    b _interrupt_pfa     // TODO: PrefetchAbort
+    b _interrupt_dat     // TODO: DataAbort
+    b _interrupt_hyp     // TODO: HypervisorTrap
+    b _interrupt_irq     // TODO: IRQInterrupt
+    b _interrupt_fiq     // TODO: FIQInterrupt
     "
 );
 
 #[cfg(s4arch = "armv7a")]
 unsafe fn _setup() -> bool {
-    _armv7a_setup() == 0x13
+    if _armv7a_setup() == 0x13 {
+        let mut code = String::<256>::new();
+        write!(code, "MMU type: {}\r\n", _armv7a_check_timer_a9());
+        debug::put_str(code.as_str());
+        true
+    } else {
+        false
+    }
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_und() -> ! {
+    debug::put_str("Illegal opcode, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_sup() -> ! {
+    debug::put_str("Supervisor call, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_pfa() -> ! {
+    debug::put_str("Prefetch abort, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_dat() -> ! {
+    debug::put_str("Data abort, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_hyp() -> ! {
+    debug::put_str("Hypervisor trap, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_irq() -> ! {
+    debug::put_str("This IRQ isn't handled yet, please file a bug report\r\n");
+    panic!();
+}
+
+#[cfg(s4arch = "armv7a")]
+#[no_mangle]
+pub extern "C" fn _interrupt_fiq() -> ! {
+    debug::put_str("This FIQ isn't handled yet, please file a bug report\r\n");
+    panic!();
 }
 
 #[panic_handler]

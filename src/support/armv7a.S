@@ -1,4 +1,5 @@
 .globl _armv7a_setup
+.globl _armv7a_check_timer_a9
 
 _armv7a_setup:
     // The Cortex-A9 should be in Supervisor mode in order to proceed
@@ -19,3 +20,13 @@ _armv7a_setup:
     bx lr
 
 // TODO: Create Armv7-A interrupt timer for Zynq
+_armv7a_check_timer_a9:
+    // https://wiki.osdev.org/ARM_Paging#ARMv7-A
+    // There is a typo, "mcr" should be "mrc" I think
+    mrc p15, 0, r0, c0, c1, 4
+
+    // check what type of pager we got
+    and r0, r0, #0xF
+
+    // return
+    bx lr
