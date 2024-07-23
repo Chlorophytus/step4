@@ -72,10 +72,7 @@ fn main() {
     match std::env::var("TARGET").unwrap().as_str() {
         "armv7a-none-eabi" => {
             println!("cargo::rustc-cfg=s4arch=\"armv7a\"");
-            build
-            .file("src/support/device_tree.S")
-                .file("src/support/armv7a.S")
-                .compile("s4support");
+            build.file("src/support/armv7a.S").compile("s4support");
             println!("cargo::rerun-if-changed={}", "src/support/armv7a.S");
         }
         unsupported => {
